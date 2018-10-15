@@ -4,37 +4,37 @@
 // https://www.terraform.io/docs/providers/aws/r/cloudfront_origin_access_identity.html
 //
 
-resource "aws_cloudfront_origin_access_identity" "private" {
-  comment = "Private access to bucket"
+resource "aws_cloudfront_origin_access_identity" "public" {
+  comment = "Public access to bucket"
 }
 
 // CloudFront
 // https://www.terraform.io/docs/providers/aws/r/cloudfront_distribution.html
 
 locals {
-  private_s3_origin_id = "PrivateS3Origin"
+  public_s3_origin_id = "Public3Origin"
 }
 
-resource "aws_cloudfront_distribution" "private" {
+resource "aws_cloudfront_distribution" "public" {
   origin {
-    domain_name = "${aws_s3_bucket.private.bucket_regional_domain_name}"
-    origin_id = "${local.private_s3_origin_id}"
+    domain_name = "${aws_s3_bucket.public.bucket_regional_domain_name}"
+    origin_id = "${local.public_s3_origin_id}"
 
     s3_origin_config {
-      origin_access_identity = "${aws_cloudfront_origin_access_identity.private.cloudfront_access_identity_path}"
+      origin_access_identity = "${aws_cloudfront_origin_access_identity.public.cloudfront_access_identity_path}"
     }
   }
 
   enabled = true
-  comment = "Test private CloudFront"
+  comment = "Test public CloudFront"
   default_root_object = "index.html"
 
-  aliases = [ "private.static.rexden.us" ]
+  aliases = [ "public.static.rexden.us" ]
 
   default_cache_behavior {
     allowed_methods = [ "GET", "HEAD" ]
     cached_methods = [ "GET", "HEAD" ]
-    target_origin_id = "${local.private_s3_origin_id}"
+    target_origin_id = "${local.public_s3_origin_id}"
 
     forwarded_values {
       query_string = false
