@@ -23,6 +23,11 @@ resource "aws_iam_saml_provider" "default" {
 // $ ./real-entitlement-update.pl dsmk http://iam.bu.edu/spfilter-amazon-813161656966-website_blazars
 //
 // This links dsmk with the IAM role  Shibboleth-website_blazars in the account 813161656966
+//
+// Once that is done people can log in by going to:
+//
+// https://shib-test.bu.edu/idp/profile/SAML2/Unsolicited/SSO?providerId=urn:amazon:webservices
+//
 
 // now lets create the IAM role
 
