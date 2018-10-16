@@ -30,15 +30,30 @@ locals {
   aws_account_id = "813161656966"
 }
 
+// The following is a Terraform shorthand for the following json:
+//
+// {
+//   "Version": "2012-10-17",
+//   "Statement": [
+//     {
+//       "Effect": "Allow",
+//       "Action": [
+//         "sts:AssumeRoleWithSAML",
+//         "sts:AssumeRole"
+//         ],
+//       "Principal": { "Federated": "${aws_iam_saml_provider.default.arn}" }
+//     }
+//   ]
+// }
+// 
 data "aws_iam_policy_document" "iam_for_saml_login" {
   statement {
-    actions = [ "sts:AssumeRole" ]
+    actions = [ "sts:AssumeRoleWithSAML", "sts:AssumeRole" ]
     effect = "Allow"
-    sid = ""
 
     principals {
-      type = "AWS"
-      identifiers = [ "" ]
+      type = "Federated"
+      identifiers = [ "${aws_iam_saml_provider.default.arn}" ]
     }
   }
 }
@@ -46,21 +61,7 @@ data "aws_iam_policy_document" "iam_for_saml_login" {
 resource "aws_iam_role" "blazars_role" {
   name = "Shibboleth-website_blazars"
 
-  assume_role_policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "sts:AssumeRoleWithSAML",
-        "sts:AssumeRole"
-        ],
-      "Principal": { "Federated": "${aws_iam_saml_provider.default.arn}" }
-    }
-  ]
-}   
-POLICY
+  assume_role_policy = "${data.aws_iam_policy_document.iam_for_saml_login.json}"
 }
 
 
