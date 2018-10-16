@@ -58,10 +58,63 @@ data "aws_iam_policy_document" "iam_for_saml_login" {
   }
 }
 
+// first we need a power-user role
+//
+resource "aws_iam_role" "poweruser" {
+  name = "Shibboleth-poweruser"
+
+  assume_role_policy = "${data.aws_iam_policy_document.iam_for_saml_login.json}"
+}
+
+resource "aws_iam_role_policy_attachment" "poweruser-access-policy" {
+    role = "${aws_iam_role.poweruser.name}"
+    policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+// now an S3 access role
+//
+data "aws_iam_policy_document" "blazars_access" {
+  // this is necessary for the web console access (unless we want to have them do the Shibboleth login 
+  // followed by a specific URL to the bucket such as:
+  //
+  // https://s3.console.aws.amazon.com/s3/buckets/rexden-public-bucket
+  //
+  statement {
+    actions = [ "s3:GetBucketLocation", "s3:ListAllMyBuckets" ]
+    effect = "Allow"
+
+    resources = [ "*" ]
+  }
+
+  // now grant access to a specific path on a specific bucket
+  statement {
+    actions = [ "s3:*" ]
+    effect = "Allow"
+
+    resources = [ 
+      "${aws_s3_bucket.public.arn}/blazars",
+      "${aws_s3_bucket.public.arn}/blazars/*"
+    ]
+  }
+}
+
 resource "aws_iam_role" "blazars_role" {
   name = "Shibboleth-website_blazars"
 
   assume_role_policy = "${data.aws_iam_policy_document.iam_for_saml_login.json}"
+
+  // increase the max session duration from 1hr to 8hr (so a working day?)
+  max_session_duration = 28800
+}
+
+resource "aws_iam_policy" "blazars" {
+  name = "blazars-policy"
+  policy = "${data.aws_iam_policy_document.blazars_access.json}"
+}
+
+resource "aws_iam_role_policy_attachment" "blazars-access-policy" {
+  role = "${aws_iam_role.blazars_role.name}"
+  policy_arn = "${aws_iam_policy.blazars.arn}"
 }
 
 
